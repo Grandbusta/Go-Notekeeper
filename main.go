@@ -1,12 +1,22 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"log"
+	"net/http"
 	"notekeeper/models"
+
+	"github.com/gorilla/mux"
 )
 
+func Home(w http.ResponseWriter, r *http.Request) {
+	data := models.Note{1, "new note and first one"}
+	json.NewEncoder(w).Encode(data)
+}
+
 func main() {
-	fmt.Println("Notekeeper")
-	newnote := models.Note{Id: 1, Content: "This is my first note to write"}
-	fmt.Println(newnote)
+	m := mux.NewRouter()
+
+	m.HandleFunc("/", Home)
+	log.Fatal(http.ListenAndServe(":8080", m))
 }
