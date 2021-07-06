@@ -15,7 +15,7 @@ import (
 // Update a note
 
 func GetAllNotes(w http.ResponseWriter, r *http.Request) {
-	db := config.DB()
+	db := config.DB
 	data := models.Note{Content: "new note and first one"}
 	result := db.Model(&models.Note{}).Create(&data)
 	json.NewEncoder(w).Encode(result)

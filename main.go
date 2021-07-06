@@ -4,11 +4,24 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"notekeeper/config"
 	"notekeeper/controllers"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
+
+func init() {
+	//Load env files
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	} else {
+		fmt.Println(".env loaded")
+	}
+	//Connect to database
+	config.DbConnect()
+}
 
 func handleResponse() {
 	m := mux.NewRouter()
@@ -20,11 +33,5 @@ func handleResponse() {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	} else {
-		fmt.Println(".env loaded")
-	}
 	handleResponse()
 }
