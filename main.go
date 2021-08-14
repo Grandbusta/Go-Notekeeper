@@ -28,6 +28,7 @@ func handleResponse() {
 
 	m.HandleFunc("/notes", controllers.GetAllNotes).Methods("GET")
 	m.HandleFunc("/notes/{id}", controllers.GetSingleNote).Methods("GET")
+	m.HandleFunc("/new-note", controllers.CreateNote).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8081", m))
 }
