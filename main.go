@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"notekeeper/config"
 	"notekeeper/controllers"
+	"notekeeper/middlewares"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -25,11 +26,12 @@ func init() {
 
 func handleResponse() {
 	m := mux.NewRouter()
-
-	m.HandleFunc("/notes", controllers.GetAllNotes).Methods("GET")
-	m.HandleFunc("/notes/{id}", controllers.GetSingleNote).Methods("GET")
+	getSingleNote := controllers.GetSingleNote
+	getAllNotes := controllers.GetAllNotes
+	m.HandleFunc("/notes", getAllNotes).Methods("GET")
+	m.HandleFunc("/notes/{id}", getSingleNote).Methods("GET")
 	m.HandleFunc("/new-note", controllers.CreateNote).Methods("POST")
-
+	m.Use(middlewares.AuthUser)
 	log.Fatal(http.ListenAndServe(":8081", m))
 }
 
