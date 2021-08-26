@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"notekeeper/config"
 	"notekeeper/models"
@@ -13,15 +14,15 @@ import (
 // Create a new note
 // Delete a note
 // Update a note
-var note = &models.Note{}
-
 func GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	db := config.DB
-	data := db.Find(note)
-	if data.RowsAffected == 0 {
-		json.NewEncoder(w).Encode(note)
-	}
-	json.NewEncoder(w).Encode(data)
+	notes := []models.Note{}
+	data := db.Find(&notes)
+	res, _ := json.Marshal(data)
+	resp, _ := json.Marshal(map[string]interface{}{"status": "correct", "data": res})
+	fmt.Println(res)
+	w.WriteHeader(http.StatusNotFound)
+	w.Write(resp)
 }
 
 func GetSingleNote(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,8 @@ func GetSingleNote(w http.ResponseWriter, r *http.Request) {
 
 func CreateNote(w http.ResponseWriter, r *http.Request) {
 	db := config.DB
-	data := models.Note{Content: "new note and first one"}
+	data := models.Note{Content: "new note and first one", UserId: 1}
 	result := db.Model(&models.Note{}).Create(&data)
+	fmt.Println(result)
 	json.NewEncoder(w).Encode(result)
 }
