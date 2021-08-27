@@ -30,6 +30,7 @@ func handleResponse() {
 	m.HandleFunc("/notes/{id}", controllers.GetSingleNote).Methods("GET")
 	m.HandleFunc("/new-note", controllers.CreateNote).Methods("POST")
 	m.HandleFunc("/users/signup", controllers.CreateUser).Methods("POST")
+	m.HandleFunc("/users/login", controllers.LoginUser).Methods("POST")
 	m.Use(middlewares.AuthUser)
 	log.Fatal(http.ListenAndServe(":8081", m))
 }
