@@ -31,7 +31,10 @@ func handleResponse() {
 	m.HandleFunc("/new-note", controllers.CreateNote).Methods("POST")
 	m.HandleFunc("/users/signup", controllers.CreateUser).Methods("POST")
 	m.HandleFunc("/users/login", controllers.LoginUser).Methods("POST")
-	m.Use(middlewares.AuthUser)
+	m.Use(middlewares.Cors)
+	exclude := []string{"/users/login", "/users/signup"}
+	middlewares.Auth(m, exclude)
+	// m.Use(middlewares.AuthUser)
 	log.Fatal(http.ListenAndServe(":8081", m))
 }
 

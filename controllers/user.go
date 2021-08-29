@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/mail"
 	"notekeeper/config"
@@ -68,14 +67,18 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusNotFound, "user does not exist")
 		return
 	}
-	fmt.Println(u)
-	fmt.Println(user)
 	bErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(u.Password))
 	if bErr != nil && bErr == bcrypt.ErrMismatchedHashAndPassword {
 		utils.RespondWithError(w, http.StatusUnprocessableEntity, "user details incorrect")
 		return
 	}
+	token, tErr := utils.CreateToken(user.ID, user.Email)
+	if tErr != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "cannot create token")
+		return
+	}
 	utils.RespondWithJson(w, http.StatusCreated, map[string]interface{}{
 		"status": http.StatusOK,
+		"token":  token,
 	})
 }
