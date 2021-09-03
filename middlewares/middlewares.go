@@ -13,7 +13,7 @@ import (
 
 var excluded = make([]string, 0)
 
-func verifyToken(r *http.Request) string {
+func verifyToken(w http.ResponseWriter, r *http.Request) {
 	var x string
 	bearerToken := r.Header.Get("Authorization")
 	if len(strings.Split(bearerToken, " ")) == 2 {
@@ -24,16 +24,26 @@ func verifyToken(r *http.Request) string {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return []byte(os.Getenv("ACCESS_SECRET")), nil
+
 	})
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		fmt.Println(claims)
+	}
 }
 
-func AuthUser(next http.Handler) http.Handler {
+func authUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if len(excluded) == 0 {
-			fmt.Println("Middleware called normally")
+			verifyToken(w, r)
+			fmt.Println("called")
 		} else {
 			if !utils.Contains(excluded, r.URL.Path) {
-				fmt.Println("Middleware called ")
+				verifyToken(w, r)
+				fmt.Println("called")
 			}
 		}
 		next.ServeHTTP(w, r)
@@ -42,7 +52,7 @@ func AuthUser(next http.Handler) http.Handler {
 
 func Auth(m *mux.Router, exclude []string) {
 	excluded = exclude
-	m.Use(AuthUser)
+	m.Use(authUser)
 }
 
 func Cors(next http.Handler) http.Handler {

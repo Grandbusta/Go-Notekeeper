@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"notekeeper/config"
 	"notekeeper/models"
+	"notekeeper/utils"
 )
 
 // functions for a user
@@ -19,10 +20,8 @@ func GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	notes := []models.Note{}
 	data := db.Find(&notes)
 	res, _ := json.Marshal(data)
-	resp, _ := json.Marshal(map[string]interface{}{"status": "correct", "data": res})
+	utils.RespondWithJson(w, http.StatusOK, map[string]interface{}{"status": http.StatusOK, "data": res})
 	fmt.Println(res)
-	w.WriteHeader(http.StatusNotFound)
-	w.Write(resp)
 }
 
 func GetSingleNote(w http.ResponseWriter, r *http.Request) {

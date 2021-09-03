@@ -34,7 +34,6 @@ func handleResponse() {
 	m.Use(middlewares.Cors)
 	exclude := []string{"/users/login", "/users/signup"}
 	middlewares.Auth(m, exclude)
-	// m.Use(middlewares.AuthUser)
 	log.Fatal(http.ListenAndServe(":8081", m))
 }
 
