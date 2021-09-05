@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"notekeeper/utils"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -13,18 +14,21 @@ import (
 
 var excluded = make([]string, 0)
 
-func verifyToken(w http.ResponseWriter, r *http.Request) {
-	var x string
+func ExtractToken(r *http.Request) string {
 	bearerToken := r.Header.Get("Authorization")
 	if len(strings.Split(bearerToken, " ")) == 2 {
-		x = strings.Split(bearerToken, " ")[1]
+		return strings.Split(bearerToken, " ")[1]
 	}
-	token, err := jwt.Parse(x, func(t *jwt.Token) (interface{}, error) {
+	return ""
+}
+
+func verifyToken(w http.ResponseWriter, r *http.Request) {
+	tokenString := ExtractToken(r)
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return []byte(os.Getenv("ACCESS_SECRET")), nil
-
 	})
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
@@ -35,15 +39,31 @@ func verifyToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ExtractId(r *http.Request) (uint, error) {
+	tokenString := ExtractToken(r)
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+		return []byte(os.Getenv("ACCESS_SECRET")), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		uid, _ := strconv.ParseUint(fmt.Sprintf("%v", claims["userId"]), 10, 32)
+		return uint(uid), nil
+	}
+	return 0, nil
+}
+
 func authUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if len(excluded) == 0 {
 			verifyToken(w, r)
-			fmt.Println("called")
 		} else {
 			if !utils.Contains(excluded, r.URL.Path) {
 				verifyToken(w, r)
-				fmt.Println("called")
 			}
 		}
 		next.ServeHTTP(w, r)
@@ -64,7 +84,6 @@ func Cors(next http.Handler) http.Handler {
 		if r.Method == http.MethodOptions {
 			return
 		}
-		fmt.Println("cors handled")
 		next.ServeHTTP(w, r)
 	})
 
