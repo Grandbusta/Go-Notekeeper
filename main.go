@@ -27,8 +27,9 @@ func init() {
 func handleResponse() {
 	m := mux.NewRouter()
 	m.HandleFunc("/notes", controllers.GetAllNotes).Methods("GET")
-	m.HandleFunc("/notes/{id}", controllers.GetSingleNote).Methods("GET")
+	m.HandleFunc("/notes/{noteId}", controllers.GetSingleNote).Methods("GET")
 	m.HandleFunc("/new-note", controllers.CreateNote).Methods("POST")
+	m.HandleFunc("/update-note", controllers.UpdateNote).Methods("PUT")
 	m.HandleFunc("/users/signup", controllers.CreateUser).Methods("POST")
 	m.HandleFunc("/users/login", controllers.LoginUser).Methods("POST")
 	m.Use(middlewares.Cors)
