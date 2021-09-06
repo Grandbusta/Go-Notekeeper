@@ -30,6 +30,7 @@ func handleResponse() {
 	m.HandleFunc("/notes/{noteId}", controllers.GetSingleNote).Methods("GET")
 	m.HandleFunc("/new-note", controllers.CreateNote).Methods("POST")
 	m.HandleFunc("/update-note", controllers.UpdateNote).Methods("PUT")
+	m.HandleFunc("/delete-note", controllers.DeleteNote).Methods("DELETE")
 	m.HandleFunc("/users/signup", controllers.CreateUser).Methods("POST")
 	m.HandleFunc("/users/login", controllers.LoginUser).Methods("POST")
 	m.Use(middlewares.Cors)

@@ -13,9 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Delete a note
-// Update a note
-
 type Note struct {
 	ID        uint   `json:"id"`
 	Content   string `json:"content"`
@@ -27,6 +24,7 @@ func GetAllNotes(w http.ResponseWriter, r *http.Request) {
 	uid, err := middlewares.ExtractId(r)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
 	}
 	user := models.User{}
 	existErr := db.Model(&models.User{}).First(&user, uid).Error
@@ -56,6 +54,7 @@ func GetSingleNote(w http.ResponseWriter, r *http.Request) {
 	uid, err := middlewares.ExtractId(r)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
 	}
 	user := models.User{}
 	existErr := db.Model(&models.User{}).First(&user, uid).Error
@@ -92,13 +91,14 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusUnprocessableEntity, "unable to process request")
 		return
 	}
-	if len(n.Content) < 0 {
+	if len(n.Content) <= 0 {
 		utils.RespondWithError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	uid, err := middlewares.ExtractId(r)
 	if err != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
 	}
 	user := models.User{}
 	existErr := db.Model(&models.User{}).First(&user, uid).Error
@@ -128,13 +128,14 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusUnprocessableEntity, "unable to process request")
 		return
 	}
-	if len(note.Content) < 0 && note.ID <= 0 {
+	if len(note.Content) <= 0 && note.ID <= 0 {
 		utils.RespondWithError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	uid, eErr := middlewares.ExtractId(r)
 	if eErr != nil {
 		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
 	}
 	user := models.User{}
 	existErr := db.Model(&models.User{}).First(&user, uid).Error
@@ -142,9 +143,54 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		utils.RespondWithError(w, http.StatusNotFound, "Unauthorized")
 		return
 	}
-	uErr := db.Model(&models.Note{}).Where("user_id=? AND id=?", uid, note.ID).Update("content", note.Content).Error
+	var n models.Note
+	fErr := db.Model(&models.Note{}).First(&n, note.ID).Error
+	if errors.Is(fErr, gorm.ErrRecordNotFound) {
+		utils.RespondWithError(w, http.StatusNotFound, "note not found")
+		return
+	}
+	uErr := db.Model(&models.Note{}).Where("user_id=? AND id=?", uid, n.ID).Update("content", note.Content).Error
 	if uErr != nil {
 		utils.RespondWithError(w, http.StatusInternalServerError, "unable to update note")
 		return
 	}
+	utils.RespondWithJson(w, http.StatusOK, map[string]interface{}{
+		"status": http.StatusOK,
+		"data": map[string]interface{}{
+			"noteId": n.ID,
+		},
+	})
+}
+
+func DeleteNote(w http.ResponseWriter, r *http.Request) {
+	note := Note{}
+	db := config.DB
+	err := json.NewDecoder(r.Body).Decode(&note)
+	if err != nil {
+		utils.RespondWithError(w, http.StatusUnprocessableEntity, "unable to process request")
+		return
+	}
+	if note.ID <= 0 {
+		utils.RespondWithError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	uid, eErr := middlewares.ExtractId(r)
+	if eErr != nil {
+		utils.RespondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+	var n models.Note
+	fErr := db.Model(&models.Note{}).First(&n, note.ID).Error
+	if errors.Is(fErr, gorm.ErrRecordNotFound) {
+		utils.RespondWithError(w, http.StatusNotFound, "note not found")
+		return
+	}
+	dErr := db.Unscoped().Where("user_id=? AND id=?", uid, n.ID).Delete(&models.Note{}).Error
+	if dErr != nil {
+		utils.RespondWithError(w, http.StatusInternalServerError, "unable to delete note")
+		return
+	}
+	utils.RespondWithJson(w, http.StatusOK, map[string]interface{}{
+		"status": http.StatusOK,
+	})
 }
